@@ -1,0 +1,809 @@
+<html><head></head><body><div hidden="" by-polymer-bundler=""><link rel="import" href="main-app.html"><!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><script>
+  /** @polymerBehavior Polymer.PaperButtonBehavior */
+  Polymer.PaperButtonBehaviorImpl = {
+    properties: {
+      /**
+       * The z-depth of this element, from 0-5. Setting to 0 will remove the
+       * shadow, and each increasing number greater than 0 will be "deeper"
+       * than the last.
+       *
+       * @attribute elevation
+       * @type number
+       * @default 1
+       */
+      elevation: {
+        type: Number,
+        reflectToAttribute: true,
+        readOnly: true
+      }
+    },
+
+    observers: [
+      '_calculateElevation(focused, disabled, active, pressed, receivedFocusFromKeyboard)',
+      '_computeKeyboardClass(receivedFocusFromKeyboard)'
+    ],
+
+    hostAttributes: {
+      role: 'button',
+      tabindex: '0',
+      animated: true
+    },
+
+    _calculateElevation: function() {
+      var e = 1;
+      if (this.disabled) {
+        e = 0;
+      } else if (this.active || this.pressed) {
+        e = 4;
+      } else if (this.receivedFocusFromKeyboard) {
+        e = 3;
+      }
+      this._setElevation(e);
+    },
+
+    _computeKeyboardClass: function(receivedFocusFromKeyboard) {
+      this.toggleClass('keyboard-focus', receivedFocusFromKeyboard);
+    },
+
+    /**
+     * In addition to `IronButtonState` behavior, when space key goes down,
+     * create a ripple down effect.
+     *
+     * @param {!KeyboardEvent} event .
+     */
+    _spaceKeyDownHandler: function(event) {
+      Polymer.IronButtonStateImpl._spaceKeyDownHandler.call(this, event);
+      // Ensure that there is at most one ripple when the space key is held down.
+      if (this.hasRipple() && this.getRipple().ripples.length < 1) {
+        this._ripple.uiDownAction();
+      }
+    },
+
+    /**
+     * In addition to `IronButtonState` behavior, when space key goes up,
+     * create a ripple up effect.
+     *
+     * @param {!KeyboardEvent} event .
+     */
+    _spaceKeyUpHandler: function(event) {
+      Polymer.IronButtonStateImpl._spaceKeyUpHandler.call(this, event);
+      if (this.hasRipple()) {
+        this._ripple.uiUpAction();
+      }
+    }
+  };
+
+  /** @polymerBehavior */
+  Polymer.PaperButtonBehavior = [
+    Polymer.IronButtonState,
+    Polymer.IronControlState,
+    Polymer.PaperRippleBehavior,
+    Polymer.PaperButtonBehaviorImpl
+  ];
+</script>
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><custom-style>
+  <style is="custom-style">
+    html {
+
+      --shadow-transition: {
+        transition: box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      };
+
+      --shadow-none: {
+        box-shadow: none;
+      };
+
+      /* from http://codepen.io/shyndman/pen/c5394ddf2e8b2a5c9185904b57421cdb */
+
+      --shadow-elevation-2dp: {
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                    0 1px 5px 0 rgba(0, 0, 0, 0.12),
+                    0 3px 1px -2px rgba(0, 0, 0, 0.2);
+      };
+
+      --shadow-elevation-3dp: {
+        box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14),
+                    0 1px 8px 0 rgba(0, 0, 0, 0.12),
+                    0 3px 3px -2px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-4dp: {
+        box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+                    0 1px 10px 0 rgba(0, 0, 0, 0.12),
+                    0 2px 4px -1px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-6dp: {
+        box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.14),
+                    0 1px 18px 0 rgba(0, 0, 0, 0.12),
+                    0 3px 5px -1px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-8dp: {
+        box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                    0 3px 14px 2px rgba(0, 0, 0, 0.12),
+                    0 5px 5px -3px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-12dp: {
+        box-shadow: 0 12px 16px 1px rgba(0, 0, 0, 0.14),
+                    0 4px 22px 3px rgba(0, 0, 0, 0.12),
+                    0 6px 7px -4px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-16dp: {
+        box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.14),
+                    0  6px 30px 5px rgba(0, 0, 0, 0.12),
+                    0  8px 10px -5px rgba(0, 0, 0, 0.4);
+      };
+
+      --shadow-elevation-24dp: {
+        box-shadow: 0 24px 38px 3px rgba(0, 0, 0, 0.14),
+                    0 9px 46px 8px rgba(0, 0, 0, 0.12),
+                    0 11px 15px -7px rgba(0, 0, 0, 0.4);
+      };
+    }
+  </style>
+</custom-style>
+<!--
+Material design: [Cards](https://www.google.com/design/spec/components/cards.html)
+
+Shared styles that you can apply to an element to renders two shadows on top
+of each other,that create the effect of a lifted piece of paper.
+
+Example:
+
+    <custom-style>
+      <style is="custom-style" include="paper-material"></style>
+    </custom-style>
+
+    <div class="paper-material elevation-1">
+      ... content ...
+    </div>
+
+@group Paper Elements
+@demo demo/index.html
+-->
+
+<dom-module id="paper-material" assetpath="../bower_components/paper-styles/element-styles/">
+  <template>
+    <style>
+      :host(.paper-material), .paper-material {
+        display: block;
+        position: relative;
+      }
+
+      :host(.paper-material[elevation="1"]), .paper-material[elevation="1"] {
+        @apply --shadow-elevation-2dp;
+      }
+
+      :host(.paper-material[elevation="2"]), .paper-material[elevation="2"] {
+        @apply --shadow-elevation-4dp;
+      }
+
+      :host(.paper-material[elevation="3"]), .paper-material[elevation="3"] {
+        @apply --shadow-elevation-6dp;
+      }
+
+      :host(.paper-material[elevation="4"]), .paper-material[elevation="4"] {
+        @apply --shadow-elevation-8dp;
+      }
+
+      :host(.paper-material[elevation="5"]), .paper-material[elevation="5"] {
+        @apply --shadow-elevation-16dp;
+      }
+    </style>
+  </template>
+</dom-module>
+<!--
+Material design: [Buttons](https://www.google.com/design/spec/components/buttons.html)
+
+`paper-button` is a button. When the user touches the button, a ripple effect emanates
+from the point of contact. It may be flat or raised. A raised button is styled with a
+shadow.
+
+Example:
+
+    <paper-button>Flat button</paper-button>
+    <paper-button raised>Raised button</paper-button>
+    <paper-button noink>No ripple effect</paper-button>
+    <paper-button toggles>Toggle-able button</paper-button>
+
+A button that has `toggles` true will remain `active` after being clicked (and
+will have an `active` attribute set). For more information, see the `Polymer.IronButtonState`
+behavior.
+
+You may use custom DOM in the button body to create a variety of buttons. For example, to
+create a button with an icon and some text:
+
+    <paper-button>
+      <iron-icon icon="favorite"></iron-icon>
+      custom button content
+    </paper-button>
+
+To use `paper-button` as a link, wrap it in an anchor tag. Since `paper-button` will already
+receive focus, you may want to prevent the anchor tag from receiving focus as well by setting
+its tabindex to -1.
+
+    <a href="https://www.polymer-project.org/" tabindex="-1">
+      <paper-button raised>Polymer Project</paper-button>
+    </a>
+
+### Styling
+
+Style the button with CSS as you would a normal DOM element.
+
+    paper-button.fancy {
+      background: green;
+      color: yellow;
+    }
+
+    paper-button.fancy:hover {
+      background: lime;
+    }
+
+    paper-button[disabled],
+    paper-button[toggles][active] {
+      background: red;
+    }
+
+By default, the ripple is the same color as the foreground at 25% opacity. You may
+customize the color using the `--paper-button-ink-color` custom property.
+
+The following custom properties and mixins are also available for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--paper-button-ink-color` | Background color of the ripple | `Based on the button's color`
+`--paper-button` | Mixin applied to the button | `{}`
+`--paper-button-disabled` | Mixin applied to the disabled button. Note that you can also use the `paper-button[disabled]` selector | `{}`
+`--paper-button-flat-keyboard-focus` | Mixin applied to a flat button after it's been focused using the keyboard | `{}`
+`--paper-button-raised-keyboard-focus` | Mixin applied to a raised button after it's been focused using the keyboard | `{}`
+
+@demo demo/index.html
+-->
+
+<dom-module id="paper-button" assetpath="../bower_components/paper-button/">
+  <template strip-whitespace="">
+    <style include="paper-material">
+      /* Need to specify the same specificity as the styles imported from paper-material. */
+      :host, :host(.paper-material) {
+        @apply --layout-inline;
+        @apply --layout-center-center;
+        position: relative;
+        box-sizing: border-box;
+        min-width: 5.14em;
+        margin: 0 0.29em;
+        background: transparent;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        -webkit-tap-highlight-color: transparent;
+        font: inherit;
+        text-transform: uppercase;
+        outline-width: 0;
+        border-radius: 3px;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: pointer;
+        z-index: 0;
+        padding: 0.7em 0.57em;
+
+        @apply --paper-font-common-base;
+        @apply --paper-button;
+      }
+
+      :host([hidden]) {
+        display: none !important;
+      }
+
+      :host([raised].keyboard-focus) {
+        font-weight: bold;
+        @apply --paper-button-raised-keyboard-focus;
+      }
+
+      :host(:not([raised]).keyboard-focus) {
+        font-weight: bold;
+        @apply --paper-button-flat-keyboard-focus;
+      }
+
+      :host([disabled]) {
+        background: #eaeaea;
+        color: #a8a8a8;
+        cursor: auto;
+        pointer-events: none;
+
+        @apply --paper-button-disabled;
+      }
+
+      :host([animated]) {
+        @apply --shadow-transition;
+      }
+
+      paper-ripple {
+        color: var(--paper-button-ink-color);
+      }
+    </style>
+
+    <slot></slot>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'paper-button',
+
+      behaviors: [
+        Polymer.PaperButtonBehavior
+      ],
+
+      properties: {
+        /**
+         * If true, the button should be styled with a shadow.
+         */
+        raised: {
+          type: Boolean,
+          reflectToAttribute: true,
+          value: false,
+          observer: '_calculateElevation'
+        }
+      },
+
+      created: function() {
+        this.classList.add('paper-material');
+      },
+
+      _calculateElevation: function() {
+        if (!this.raised) {
+          this._setElevation(0);
+        } else {
+          Polymer.PaperButtonBehaviorImpl._calculateElevation.apply(this);
+        }
+      }
+
+      /**
+      Fired when the animation finishes.
+      This is useful if you want to wait until
+      the ripple animation finishes to perform some action.
+
+      @event transitionend
+      Event param: {{node: Object}} detail Contains the animated node.
+      */
+    });
+  </script>
+</dom-module>
+<script>
+const AudioMixin = (_ => {
+    const _AudioMixin = subclass => class extends subclass {
+        static get properties() {
+            return {
+                audioMixinData: {
+                    type: Object,
+                    value: _AudioMixin["audioMixinData"],
+                }
+            }
+        }
+
+    connectedCallback() {
+      super.connectedCallback();
+      _AudioMixin["instances"].push(this);
+    }
+
+    disconnectedCallback() {
+      super.disconnectedCallback();
+      const i = _AudioMixin["instances"].indexOf(this);
+      if (i >= 0) {
+          _AudioMixin["instances"].splice(i, 1);
+      }
+    }
+
+    loadEffect(url, name) {
+        var getSound = new XMLHttpRequest();
+        getSound.open("GET", url, true);
+        getSound.responseType = "arraybuffer";
+        getSound.onload = _ => {
+            this.audioMixinData.ctx.decodeAudioData(getSound.response, buffer => {
+                this.audioMixinData.effects[name] = buffer;
+            });
+        }
+        getSound.send();
+    }
+
+    loadEffectBlob(blob, name) {
+        var reader = new FileReader();
+        reader.onload = () => {
+            console.log(reader.result);
+            this.audioMixinData.ctx.decodeAudioData(reader.result, buffer => {
+                this.audioMixinData.effects[name] = buffer;
+            });
+        };
+        reader.readAsArrayBuffer(blob);
+    }
+
+    loadMusic(url, name) {
+        this.audioMixinData.music[name] = new Audio(url);
+    }
+
+    playMusic(name, loop, volume) {
+        // assuming Audio media element (TODO: stop music...)
+        var snd = this.audioMixinData.music[name];
+        if(!snd)
+            return;
+
+        if(volume) {
+            snd.volume = volume;
+        }
+
+        if(loop) {
+            if (typeof snd.loop == 'boolean')
+            {
+                snd.loop = true;
+            }
+            else
+            {
+                snd.addEventListener('ended', _ => {
+                    this.currentTime = 0;
+                    snd.play();
+                }, false);
+            }
+        }
+        snd.play();
+    }
+
+    muteMusic(name, muted) {
+        // assuming Audio media element
+        var snd = this.audioMixinData.music[name];
+        if(!snd)
+            return;
+
+        if(muted)
+            snd.pause();
+        else
+            snd.play();
+    }
+
+    playEffect(name, rate) {
+        console.log("[playEffect] ", name);
+        if(this.audioMixinData.muted)
+            return;
+
+        var snd = this.audioMixinData.effects[name];
+        if(!snd)
+            return;
+        // WebAudio...
+        var playSound = this.audioMixinData.ctx.createBufferSource();
+        playSound.buffer = snd;
+        if(rate) {
+            playSound.playbackRate.value = rate;
+        }
+        playSound.connect(this.audioMixinData.ctx.destination);
+        playSound.start(0);
+    }
+
+    playEffectNote(name, rate, note) {
+        console.log("[playEffect] ", name);
+        if(this.audioMixinData.muted)
+            return;
+
+        var snd = this.audioMixinData.effects[name];
+        if(!snd)
+            return;
+        // WebAudio...
+        var playSound = this.audioMixinData.ctx.createBufferSource();
+        playSound.buffer = snd;
+        if(rate) {
+            playSound.playbackRate.value = rate;
+        }
+        playSound.connect(this.audioMixinData.ctx.destination);
+        playSound.start(0);
+        this.audioMixinData.notes[note] = playSound;
+    }
+
+    stopNote(note) {
+        let playSound = this.audioMixinData.notes[note];
+        if(playSound) {
+            playSound.stop();
+        }
+    }
+
+    setMute(muted) {
+        this.audioMixinData.muted = muted;
+
+        this.muteMusic('theme', muted); // todo handle other music than 'theme' (e.g. remember last music played)
+    }
+
+  };
+
+  Object.defineProperty(_AudioMixin, "audioMixinData", {
+    value: {
+        effects: {},
+        music: {},
+        muted: false,
+        ctx: new (window.AudioContext || window.webkitAudioContext)(),
+        notes: {}
+    },
+    writable: false,
+    enumerable: false,
+    configurable: false
+  });
+  Object.defineProperty(_AudioMixin, "instances", {
+    value: [],
+    writable: false,
+    enumerable: false,
+    configurable: false
+  });
+
+  _AudioMixin.notifyPath = function(path) {
+    _AudioMixin["instances"].forEach(instance => instance.notifyPath(path))
+  }
+
+  return _AudioMixin;
+})();
+
+</script>
+</div><dom-module id="main-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      #visualizer {
+        display: block;
+        width: 99%;
+        height: 100px;
+        margin: 0.3em;
+      }
+      
+      paper-button.record {
+         background-color: var(--paper-green-500);
+      }
+      paper-button.recording {
+         background-color: var(--paper-red-500);
+      }
+      paper-button[disabled] {
+         background-color: var(--paper-gray-500);
+      }
+    </style>
+
+    <canvas id="visualizer"></canvas>
+    <paper-button id="record" class="record" on-tap="_recordToggle">[[recBtn(isRecording)]]</paper-button>
+    <template is="dom-repeat" items="[[eventlist]]">
+      [[doRender(item)]]<br>
+    </template>
+  </template>
+
+  <script>
+    class MainPage extends AudioMixin(Polymer.Element) {
+      static get is() { return 'main-page'; }
+
+      static get properties() {
+        return {
+          eventlist: {
+            type: Array,
+            value: () => []
+          },
+          midictrl: {
+            type: Object
+          },
+          isRecording: {
+            type: Boolean,
+            value: false
+          }
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        requestAnimationFrame(this._init.bind(this));
+      }
+
+      _init() {
+        const obj = document.createElement('audio');
+        const canOgg = obj.canPlayType('audio/ogg');
+        if(canOgg.length) {
+          this.loadEffect('./sounds/flute1.ogg', 'sample')
+        } else {
+          // must make some mp3 for iOS ;)
+        }
+
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({
+                sysex: false
+            }).then(midi => {
+                this.midictrl = midi;
+
+                var inputs = this.midictrl.inputs.values();
+                for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+                    input.value.onmidimessage = this._onMIDIEvent.bind(this);
+                }
+            },
+            error => console.log("WindMIDIService error: " + error));
+        } else {
+             console.log("WindMIDIService error: WebMIDI not supported.");
+        }
+
+        // setup recording...
+        setTimeout(this._initRecording.bind(this), 1000);
+      }
+
+      recBtn() {
+        return this.isRecording ? "STOP" : "RECORD";
+      }
+
+      _onMIDIEvent(event) {
+        var data = event.data;
+        const toneDiff = Math.pow(2, 1/12);
+        console.log(data);
+        switch(data[0]) {
+        case 144:
+            if(data[2] > 0) {
+                this.playEffectNote('sample',Math.pow(toneDiff, data[1]-60), data[1]);
+            } else {
+                this.stopNote(data[1]);
+            }
+            break;
+        // case 0xE0: // 224 = pitch bend
+        //     WindMIDIService._fireEvent({
+        //         type: "pitch",
+        //         value: data[1] + (data[2] << 7)
+        //     });
+        //     break;
+        // case 0xD0: // 208 = pressure/after-touch
+        //     WindMIDIService._fireEvent({
+        //         type: "pressure",
+        //         value: data[1]
+        //     });
+        //     break;
+
+        }
+      }
+
+      _initRecording() {
+        if (navigator.getUserMedia) {
+          let constraints = { audio: true, video: false };
+          let chunks = [];
+
+          let onSuccess = stream => {
+            this.mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+
+            this.visualize(stream);
+
+            this.mediaRecorder.onstop = (e) => {
+              var blob = new Blob(chunks, { 'type' : 'audio/webm' });
+              chunks = [];
+
+              this.loadEffectBlob(blob, 'sample')
+              this.isRecording = false;
+              // debounce a bit ;)
+              setTimeout(() => {
+                this.$.record.classList.remove('recording');
+                this.$.record.disabled = false;
+              }, 1000);
+            }
+          
+            this.mediaRecorder.ondataavailable = (e) => {
+              console.log(e.data);
+              chunks.push(e.data);
+            }
+          }
+
+          let onError = err => {
+            console.log(err);
+          }
+
+          navigator.getUserMedia(constraints, onSuccess, onError);
+        } else {
+          console.log('getUserMedia is not supported!');
+        }
+      }
+
+      _recordToggle() {
+        if(this.mediaRecorder) {
+          if(this.isRecording) {
+            this.mediaRecorder.stop();
+            this.$.record.disabled = true;
+          } else {
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            this.$.record.classList.add('recording');
+          }
+        }
+      }
+
+
+      visualize(stream) {
+        let audioCtx = new (window.AudioContext || webkitAudioContext)();
+
+        let source = audioCtx.createMediaStreamSource(stream);
+
+        let analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        let bufferLength = analyser.frequencyBinCount;
+        let dataArray = new Uint8Array(bufferLength);
+
+        source.connect(analyser);
+        //analyser.connect(audioCtx.destination);
+        
+        let canvas = this.$.visualizer;
+        let WIDTH = canvas.width;
+        let HEIGHT = canvas.height;
+        let canvasCtx = canvas.getContext("2d");
+
+        let draw = () => {
+
+          requestAnimationFrame(draw);
+
+          analyser.getByteTimeDomainData(dataArray);
+
+          canvasCtx.fillStyle = '#0D47A1';
+          canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+          canvasCtx.lineWidth = 2;
+          canvasCtx.strokeStyle = '#E3F2FD';
+
+          canvasCtx.beginPath();
+
+          var sliceWidth = WIDTH * 1.0 / bufferLength;
+          var x = 0;
+
+
+          for(var i = 0; i < bufferLength; i++) {
+      
+            var v = dataArray[i] / 128.0;
+            var y = v * HEIGHT/2;
+
+            if(i === 0) {
+              canvasCtx.moveTo(x, y);
+            } else {
+              canvasCtx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+          }
+
+          canvasCtx.lineTo(canvas.width, canvas.height/2);
+          canvasCtx.stroke();
+
+        }
+
+        draw()
+      }
+  
+
+    }
+    window.customElements.define(MainPage.is, MainPage);
+  </script>
+</dom-module>
+</body></html>
