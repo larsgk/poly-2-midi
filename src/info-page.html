@@ -1,0 +1,24 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<dom-module id="info-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+        padding: 10px;
+      }
+    </style>
+      <h3>Poly2MIDI</h3>
+      <p>WebMIDI and WebAudio demo done with Polymer 2 (RC5)</p>
+      <p>The demo works as a very simple sampler, allowing recording of a sample that can be played back using a connected midi controller</p>
+      <p>(virtual keyboard/controller will be added for those without the real thing ;))</p>
+  </template>
+
+  <script>
+    class InfoPage extends Polymer.Element {
+      static get is() { return 'info-page'; }
+    }
+
+    window.customElements.define(InfoPage.is, InfoPage);
+  </script>
+</dom-module>

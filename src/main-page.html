@@ -1,0 +1,238 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="audio-mixin.html">
+
+<dom-module id="main-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+        padding: 10px;
+      }
+      #visualizer {
+        display: block;
+        width: 99%;
+        height: 100px;
+        margin: 0.3em;
+      }
+      
+      paper-button.record {
+         background-color: var(--paper-green-500);
+      }
+      paper-button.recording {
+         background-color: var(--paper-red-500);
+      }
+      paper-button[disabled] {
+         background-color: var(--paper-gray-500);
+      }
+    </style>
+
+    <canvas id="visualizer"></canvas>
+    <paper-button id="record" class="record" on-tap="_recordToggle">[[recBtn(isRecording)]]</paper-button>
+    <template is="dom-repeat" items="[[eventlist]]">
+      [[doRender(item)]]<br>
+    </template>
+  </template>
+
+  <script>
+    class MainPage extends AudioMixin(Polymer.Element) {
+      static get is() { return 'main-page'; }
+
+      static get properties() {
+        return {
+          eventlist: {
+            type: Array,
+            value: () => []
+          },
+          midictrl: {
+            type: Object
+          },
+          isRecording: {
+            type: Boolean,
+            value: false
+          }
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        requestAnimationFrame(this._init.bind(this));
+      }
+
+      _init() {
+        const obj = document.createElement('audio');
+        const canOgg = obj.canPlayType('audio/ogg');
+        if(canOgg.length) {
+          this.loadEffect('./sounds/flute1.ogg', 'sample')
+        } else {
+          // must make some mp3 for iOS ;)
+        }
+
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess({
+                sysex: false
+            }).then(midi => {
+                this.midictrl = midi;
+
+                var inputs = this.midictrl.inputs.values();
+                for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+                    input.value.onmidimessage = this._onMIDIEvent.bind(this);
+                }
+            },
+            error => console.log("WindMIDIService error: " + error));
+        } else {
+             console.log("WindMIDIService error: WebMIDI not supported.");
+        }
+
+        // setup recording...
+        setTimeout(this._initRecording.bind(this), 1000);
+      }
+
+      recBtn() {
+        return this.isRecording ? "STOP" : "RECORD";
+      }
+
+      _onMIDIEvent(event) {
+        var data = event.data;
+        const toneDiff = Math.pow(2, 1/12);
+        console.log(data);
+        switch(data[0]) {
+        case 144:
+            if(data[2] > 0) {
+                this.playEffectNote('sample',Math.pow(toneDiff, data[1]-60), data[1]);
+            } else {
+                this.stopNote(data[1]);
+            }
+            break;
+        // case 0xE0: // 224 = pitch bend
+        //     WindMIDIService._fireEvent({
+        //         type: "pitch",
+        //         value: data[1] + (data[2] << 7)
+        //     });
+        //     break;
+        // case 0xD0: // 208 = pressure/after-touch
+        //     WindMIDIService._fireEvent({
+        //         type: "pressure",
+        //         value: data[1]
+        //     });
+        //     break;
+
+        }
+      }
+
+      _initRecording() {
+        if (navigator.getUserMedia) {
+          let constraints = { audio: true, video: false };
+          let chunks = [];
+
+          let onSuccess = stream => {
+            this.mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm'});
+
+            this.visualize(stream);
+
+            this.mediaRecorder.onstop = (e) => {
+              var blob = new Blob(chunks, { 'type' : 'audio/webm' });
+              chunks = [];
+
+              this.loadEffectBlob(blob, 'sample')
+              this.isRecording = false;
+              // debounce a bit ;)
+              setTimeout(() => {
+                this.$.record.classList.remove('recording');
+                this.$.record.disabled = false;
+              }, 1000);
+            }
+          
+            this.mediaRecorder.ondataavailable = (e) => {
+              console.log(e.data);
+              chunks.push(e.data);
+            }
+          }
+
+          let onError = err => {
+            console.log(err);
+          }
+
+          navigator.getUserMedia(constraints, onSuccess, onError);
+        } else {
+          console.log('getUserMedia is not supported!');
+        }
+      }
+
+      _recordToggle() {
+        if(this.mediaRecorder) {
+          if(this.isRecording) {
+            this.mediaRecorder.stop();
+            this.$.record.disabled = true;
+          } else {
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            this.$.record.classList.add('recording');
+          }
+        }
+      }
+
+
+      visualize(stream) {
+        let audioCtx = new (window.AudioContext || webkitAudioContext)();
+
+        let source = audioCtx.createMediaStreamSource(stream);
+
+        let analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        let bufferLength = analyser.frequencyBinCount;
+        let dataArray = new Uint8Array(bufferLength);
+
+        source.connect(analyser);
+        //analyser.connect(audioCtx.destination);
+        
+        let canvas = this.$.visualizer;
+        let WIDTH = canvas.width;
+        let HEIGHT = canvas.height;
+        let canvasCtx = canvas.getContext("2d");
+
+        let draw = () => {
+
+          requestAnimationFrame(draw);
+
+          analyser.getByteTimeDomainData(dataArray);
+
+          canvasCtx.fillStyle = '#0D47A1';
+          canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+          canvasCtx.lineWidth = 2;
+          canvasCtx.strokeStyle = '#E3F2FD';
+
+          canvasCtx.beginPath();
+
+          var sliceWidth = WIDTH * 1.0 / bufferLength;
+          var x = 0;
+
+
+          for(var i = 0; i < bufferLength; i++) {
+      
+            var v = dataArray[i] / 128.0;
+            var y = v * HEIGHT/2;
+
+            if(i === 0) {
+              canvasCtx.moveTo(x, y);
+            } else {
+              canvasCtx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+          }
+
+          canvasCtx.lineTo(canvas.width, canvas.height/2);
+          canvasCtx.stroke();
+
+        }
+
+        draw()
+      }
+  
+
+    }
+    window.customElements.define(MainPage.is, MainPage);
+  </script>
+</dom-module>
