@@ -299,7 +299,7 @@ Custom property | Description | Default
   <template strip-whitespace="">
     <style include="paper-material">
       /* Need to specify the same specificity as the styles imported from paper-material. */
-      :host, :host(.paper-material) {
+      :host {
         @apply --layout-inline;
         @apply --layout-center-center;
         position: relative;
@@ -320,9 +320,29 @@ Custom property | Description | Default
         cursor: pointer;
         z-index: 0;
         padding: 0.7em 0.57em;
-
+        
         @apply --paper-font-common-base;
         @apply --paper-button;
+      }
+
+      :host([elevation="1"]) {
+        @apply --paper-material-elevation-1;
+      }
+
+      :host([elevation="2"]) {
+        @apply --paper-material-elevation-2;
+      }
+
+      :host([elevation="3"]) {
+        @apply --paper-material-elevation-3;
+      }
+
+      :host([elevation="4"]) {
+        @apply --paper-material-elevation-4;
+      }
+
+      :host([elevation="5"]) {
+        @apply --paper-material-elevation-5;
       }
 
       :host([hidden]) {
@@ -380,10 +400,6 @@ Custom property | Description | Default
         }
       },
 
-      created: function() {
-        this.classList.add('paper-material');
-      },
-
       _calculateElevation: function() {
         if (!this.raised) {
           this._setElevation(0);
@@ -416,16 +432,16 @@ const AudioMixin = (_ => {
         }
 
     connectedCallback() {
-      super.connectedCallback();
-      _AudioMixin["instances"].push(this);
+        super.connectedCallback();
+        _AudioMixin["instances"].push(this);
     }
 
     disconnectedCallback() {
-      super.disconnectedCallback();
-      const i = _AudioMixin["instances"].indexOf(this);
-      if (i >= 0) {
-          _AudioMixin["instances"].splice(i, 1);
-      }
+        super.disconnectedCallback();
+        const i = _AudioMixin["instances"].indexOf(this);
+        if (i >= 0) {
+            _AudioMixin["instances"].splice(i, 1);
+        }
     }
 
     loadEffect(url, name) {
@@ -577,31 +593,89 @@ const AudioMixin = (_ => {
     <style>
       :host {
         display: block;
-        padding: 10px;
+        padding: 0;
+        margin: 0;
       }
-      #visualizer {
-        display: block;
-        width: 99%;
-        height: 100px;
-        margin: 0.3em;
+      .sampler {
+        display:flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+        justify-content:center;
+        align-content: center;
       }
       
+      #visualizer {
+        display: block;
+        width: 100%;
+        height: 100px;
+        margin: 0.5em 0 0;
+      }
+
+      #playarea {
+        width: 100%;
+        height: auto;
+        margin: 0.5em 0 0;
+        background-color: #fff;
+        font-style: italic;
+        color: var(--paper-grey-600);
+        justify-content:center;
+        align-content: center;
+      }
+
+      .wkey {
+        background-color: white;
+        color:black;
+        vertical-align: sub;
+      }
+
+      .bkey {
+        background-color: black;
+        color:white;
+        vertical-align: super;
+      }
+
       paper-button.record {
-         background-color: var(--paper-green-500);
+        color: var(--paper-red-500);
+        font-size: 1.5em;
+        margin: 0.5em auto 0;
+        background-color: #fff;
       }
       paper-button.recording {
-         background-color: var(--paper-red-500);
+        color: #fff;
+        background-color: var(--paper-red-500);
       }
       paper-button[disabled] {
-         background-color: var(--paper-gray-500);
+        background-color: var(--paper-grey-200);
       }
     </style>
 
-    <canvas id="visualizer"></canvas>
-    <paper-button id="record" class="record" on-tap="_recordToggle">[[recBtn(isRecording)]]</paper-button>
-    <template is="dom-repeat" items="[[eventlist]]">
-      [[doRender(item)]]<br>
-    </template>
+    <div class="sampler">
+      <canvas id="visualizer"></canvas>
+      <paper-button id="record" class="record" on-tap="_recordToggle"><iron-icon icon="[[recIcon(isRecording)]]"></iron-icon>[[recBtn(isRecording)]]</paper-button>
+      <div id="playarea">Virtual keyboard coming soon (touch area for sample) :)<br>... until then, use a connected MIDI controller or keyboard keys:<br>
+        <span>
+          <span class="wkey">Q</span>
+          <span class="bkey">2</span>
+          <span class="wkey">W</span>
+          <span class="bkey">3</span>
+          <span class="wkey">E</span>
+          <span class="wkey">R</span>
+          <span class="bkey">5</span>
+          <span class="wkey">T</span>
+          <span class="bkey">6</span>
+          <span class="wkey">Y</span>
+          <span class="bkey">7</span>
+          <span class="wkey">U</span>
+          <span class="wkey">I</span>
+        </span></div>
+      
+      <template is="dom-repeat" items="[[eventlist]]">
+        [[doRender(item)]]<br>
+      </template>
+    </div>
   </template>
 
   <script>
@@ -614,7 +688,7 @@ const AudioMixin = (_ => {
             type: Array,
             value: () => []
           },
-          midictrl: {
+          midiaccess: {
             type: Object
           },
           isRecording: {
@@ -641,25 +715,79 @@ const AudioMixin = (_ => {
         if (navigator.requestMIDIAccess) {
             navigator.requestMIDIAccess({
                 sysex: false
-            }).then(midi => {
-                this.midictrl = midi;
+            }).then(midiaccess => {
+                this.midiaccess = midiaccess;
 
-                var inputs = this.midictrl.inputs.values();
-                for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+                let inputs = this.midiaccess.inputs.values();
+                for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+                    console.log('midi input', input.value);
                     input.value.onmidimessage = this._onMIDIEvent.bind(this);
                 }
+
+                this.midiaccess.onstatechange = this._onMIDIStateChange.bind(this);
+                
             },
             error => console.log("WindMIDIService error: " + error));
         } else {
              console.log("WindMIDIService error: WebMIDI not supported.");
         }
 
+        const _KEY_NOTE = {
+          "KeyQ":    60,
+          "Digit2":  61,
+          "KeyW":    62,
+          "Digit3":  63,
+          "KeyE":    64,
+          "KeyR":    65,
+          "Digit5":  66,
+          "KeyT":    67,
+          "Digit6":  68,
+          "KeyY":    69,
+          "Digit7":  70,
+          "KeyU":    71,
+          "KeyI":    72
+        };
+
+        // setup key bindings
+        document.addEventListener('keydown', evt => {
+          const toneDiff = Math.pow(2, 1/12);
+          if(!evt.repeat) {
+            const note = _KEY_NOTE[evt.code];
+            if(note !== undefined) {
+              this.playEffectNote('sample',Math.pow(toneDiff, note-60), note);
+            } else if(evt.code === 'KeyS') {
+              if(!this.$.record.disabled)
+                this._recordToggle();
+            }
+          }
+        });
+
+        document.addEventListener('keyup', evt => {
+          if(!evt.repeat) {
+            const note = _KEY_NOTE[evt.code];
+            if(note !== undefined) {
+              this.stopNote(note);
+            }
+          }
+        });
+
+        let dummyPlay = () => {this.playEffectNote('sample',1,60)};
+        let dummyStop = () => {this.stopNote(60)};
+        this.$.playarea.addEventListener('touchstart', dummyPlay, false);
+        // this.$.playarea.addEventListener('mousedown', dummyPlay, false);
+        this.$.playarea.addEventListener('touchend', dummyStop, false);
+        // this.$.playarea.addEventListener('mouseup', dummyStop, false);
+
         // setup recording...
-        setTimeout(this._initRecording.bind(this), 1000);
+        setTimeout(this._initRecording.bind(this), 500);
       }
 
       recBtn() {
-        return this.isRecording ? "STOP" : "RECORD";
+        return this.isRecording ? "STOP (S)" : "SAMPLE (S)";
+      }
+
+      recIcon() {
+        return this.isRecording ? "my-icons:stop" : "my-icons:fiber-manual-record";
       }
 
       _onMIDIEvent(event) {
@@ -687,6 +815,16 @@ const AudioMixin = (_ => {
         //     });
         //     break;
 
+        }
+      }
+
+      _onMIDIStateChange(event) {
+        console.log('midi state change: ', event);
+        let port = event.port;
+        if(port instanceof MIDIInput) {
+          if(port.state === 'connected') {
+            port.onmidimessage = this._onMIDIEvent.bind(this);
+          }
         }
       }
 

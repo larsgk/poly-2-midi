@@ -11,16 +11,16 @@ const AudioMixin = (_ => {
         }
 
     connectedCallback() {
-      super.connectedCallback();
-      _AudioMixin["instances"].push(this);
+        super.connectedCallback();
+        _AudioMixin["instances"].push(this);
     }
 
     disconnectedCallback() {
-      super.disconnectedCallback();
-      const i = _AudioMixin["instances"].indexOf(this);
-      if (i >= 0) {
-          _AudioMixin["instances"].splice(i, 1);
-      }
+        super.disconnectedCallback();
+        const i = _AudioMixin["instances"].indexOf(this);
+        if (i >= 0) {
+            _AudioMixin["instances"].splice(i, 1);
+        }
     }
 
     loadEffect(url, name) {
