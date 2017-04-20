@@ -600,12 +600,14 @@ const AudioMixin = (_ => {
       .keys {
         display: flex;
         width: 100%;
+        user-select: none;
       }
 
       .octave {
         display: flex;
         flex-direction: column;
         width: 100%;
+        user-select: none;
       }
 
       .key {
@@ -615,12 +617,14 @@ const AudioMixin = (_ => {
         border: 1px solid #888;
         border-radius: 1em;
         margin: 0.1em;
+        user-select: none;
       }
 
       .key > span {
         display: block;
         margin: 0 auto;
         font-size: 2em;
+        user-select: none;
       }
 
       .blackkey {
