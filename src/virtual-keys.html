@@ -161,8 +161,8 @@
             if(ktext) {
               key.innerHTML=`<span>${ktext}</span>`;
             }
-            key.addEventListener('touchstart', () => { this._playNote(key) }, false);
-            key.addEventListener('touchend', () => { this._stopNote(key) }, false);
+            key.addEventListener('touchstart', () => { this._playNote(key); return false; }, false);
+            key.addEventListener('touchend', () => { this._stopNote(key); return false; }, false);
           }
         })
         console.log(octaves);
