@@ -1,0 +1,182 @@
+<html><head><link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="my-icons.html">
+
+</head><body><dom-module id="virtual-keys">
+  <template>
+    <style>
+      :host {
+        display: block;
+        padding: 0;
+        margin: 0;
+      }
+
+      .keys {
+        display: flex;
+        width: 100%;
+      }
+
+      .octave {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .key {
+        display: flex;
+        flex-grow: 1;
+        height: 3em;
+        border: 1px solid #888;
+        border-radius: 1em;
+        margin: 0.1em;
+      }
+
+      .key > span {
+        display: block;
+        margin: 0 auto;
+        font-size: 2em;
+      }
+
+      .blackkey {
+        background: #000;
+        color: #fff;
+      }
+
+      .whitekey {
+        background-color: #fff;
+        color: #000;
+      }
+
+      .keyrow {
+        display: flex;
+      }
+
+      .halfspace {
+        background: transparent;
+        flex-grow: 0.5;
+        height: 3em;
+        border: 0.5px solid transparent;
+        margin: 0.05em;
+      }
+      .fullspace {
+        background: transparent;
+        flex-grow: 1;
+        height: 3em;
+        border: 1px solid transparent;
+        margin: 0.1em;
+      }
+    </style>
+
+    <div id="keys" class="keys">
+      <div class="octave">
+        <div class="keyrow">
+          <div class="halfspace"></div>
+          <div class="blackkey key dk1"></div>
+          <div class="blackkey key dk3"></div>
+          <div class="fullspace"></div>
+          <div class="blackkey key dk6"></div>
+          <div class="blackkey key dk8"></div>
+          <div class="blackkey key dk10"></div>
+          <div class="halfspace"></div>
+        </div>
+        <div class="keyrow">
+          <div class="whitekey key dk0"></div>
+          <div class="whitekey key dk2"></div>
+          <div class="whitekey key dk4"></div>
+          <div class="whitekey key dk5"></div>
+          <div class="whitekey key dk7"></div>
+          <div class="whitekey key dk9"></div>
+          <div class="whitekey key dk11"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    class VirtualKeys extends Polymer.Element {
+      static get is() { return 'virtual-keys'; }
+
+      static get properties() {
+        return {
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        requestAnimationFrame(this._init.bind(this));
+      }
+
+      _init() {
+        const _KEY_NOTE = {
+          k60: 'Q',
+          k61: '2',
+          k62: 'W',
+          k63: '3',
+          k64: 'E',
+          k65: 'R',
+          k66: '5',
+          k67: 'T',
+          k68: '6',
+          k69: 'Y',
+          k70: '7',
+          k71: 'U',
+          k72: 'I'
+        };
+
+        // setup key bindings
+        document.addEventListener('keydown', evt => {
+          // const toneDiff = Math.pow(2, 1/12);
+          // if(!evt.repeat) {
+          //   const note = _KEY_NOTE[evt.code];
+          //   if(note !== undefined) {
+          //     this.playEffectNote('sample',Math.pow(toneDiff, note-60), note);
+          //   } else if(evt.code === 'KeyS') {
+          //     if(!this.$.record.disabled)
+          //       this._recordToggle();
+          //   }
+          // }
+        });
+
+        document.addEventListener('keyup', evt => {
+          // if(!evt.repeat) {
+          //   const note = _KEY_NOTE[evt.code];
+          //   if(note !== undefined) {
+          //     this.stopNote(note);
+          //   }
+          // }
+        });
+
+        let octaves = this.$.keys.querySelectorAll('.octave');
+        // note: Center C is key = 60, so make the first C = 60 - 12 * Math.floor(octaves.length/2);
+        let noteVal = 60 - 12 * Math.floor(octaves.length/2);
+        octaves.forEach(octave => {
+          for(let dkey = 0; dkey < 12; dkey++) {
+            let key = octave.querySelector(`.dk${dkey}`)
+            const ktext = _KEY_NOTE[`k${noteVal}`];
+            key.setAttribute('note',noteVal++);
+            if(ktext) {
+              key.innerHTML=`<span>${ktext}</span>`;
+            }
+            key.addEventListener('touchstart', () => { this._playNote(key) }, false);
+            key.addEventListener('touchend', () => { this._stopNote(key) }, false);
+          }
+        })
+        console.log(octaves);
+      }
+
+      _playNote(key) {
+        // emulate midi msg
+        console.log(key);
+        this.dispatchEvent(new CustomEvent('virtual-key', {detail: [144,+key.getAttribute('note'),127]}));
+      }
+
+      _stopNote(key) {
+        // emulate midi msg
+        this.dispatchEvent(new CustomEvent('virtual-key', {detail: [144,+key.getAttribute('note'),0]}));
+      }
+
+    }
+    window.customElements.define(VirtualKeys.is, VirtualKeys);
+  </script>
+</dom-module>
+</body></html>

@@ -1,6 +1,7 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="audio-mixin.html">
+<link rel="import" href="virtual-keys.html">
 <link rel="import" href="my-icons.html">
 
 <dom-module id="main-page">
@@ -29,27 +30,9 @@
         margin: 0.5em 0 0;
       }
 
-      #playarea {
+      virtual-keys {
         width: 100%;
-        height: auto;
         margin: 0.5em 0 0;
-        background-color: #fff;
-        font-style: italic;
-        color: var(--paper-grey-600);
-        justify-content:center;
-        align-content: center;
-      }
-
-      .wkey {
-        background-color: white;
-        color:black;
-        vertical-align: sub;
-      }
-
-      .bkey {
-        background-color: black;
-        color:white;
-        vertical-align: super;
       }
 
       paper-button.record {
@@ -70,26 +53,12 @@
     <div class="sampler">
       <canvas id="visualizer"></canvas>
       <paper-button id="record" class="record" on-tap="_recordToggle"><iron-icon icon="[[recIcon(isRecording)]]"></iron-icon>[[recBtn(isRecording)]]</paper-button>
-      <div id="playarea">Virtual keyboard coming soon (touch area for sample) :)<br>... until then, use a connected MIDI controller or keyboard keys:<br>
-        <span>
-          <span class="wkey">Q</span>
-          <span class="bkey">2</span>
-          <span class="wkey">W</span>
-          <span class="bkey">3</span>
-          <span class="wkey">E</span>
-          <span class="wkey">R</span>
-          <span class="bkey">5</span>
-          <span class="wkey">T</span>
-          <span class="bkey">6</span>
-          <span class="wkey">Y</span>
-          <span class="bkey">7</span>
-          <span class="wkey">U</span>
-          <span class="wkey">I</span>
-        </div>
-      </span>
+      <virtual-keys id="virtualKeys"></virtual-keys>
+      Use a connected MIDI controller or the virtual keyboard (touch and keys)
       <template is="dom-repeat" items="[[eventlist]]">
         [[doRender(item)]]<br>
       </template>
+
     </div>
   </template>
 
@@ -186,13 +155,7 @@
           }
         });
 
-        let dummyPlay = () => {this.playEffectNote('sample',1,60)};
-        let dummyStop = () => {this.stopNote(60)};
-        this.$.playarea.addEventListener('touchstart', dummyPlay, false);
-        // this.$.playarea.addEventListener('mousedown', dummyPlay, false);
-        this.$.playarea.addEventListener('touchend', dummyStop, false);
-        // this.$.playarea.addEventListener('mouseup', dummyStop, false);
-
+        this.$.virtualKeys.addEventListener('virtual-key',this._onVKEvent.bind(this));
         // setup recording...
         setTimeout(this._initRecording.bind(this), 500);
       }
@@ -206,7 +169,15 @@
       }
 
       _onMIDIEvent(event) {
-        var data = event.data;
+        this._onMIDIMessage(event.data);
+      }
+
+      _onVKEvent(event) {
+        //console.log(event);
+        this._onMIDIMessage(event.detail);
+      }
+
+      _onMIDIMessage(data) {
         const toneDiff = Math.pow(2, 1/12);
         console.log(data);
         switch(data[0]) {
